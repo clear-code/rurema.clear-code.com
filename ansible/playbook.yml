@@ -1,0 +1,215 @@
+- hosts: servers
+  become: yes
+  vars:
+    rurema_search_user: rurema
+    ruby_api_version: 2.1.0
+    passenger_version: 5.0.27
+  tasks:
+    # Base
+    - name: Upgrade packages
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        upgrade: safe
+    - name: Install base packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - apt-listchanges
+        - vim
+        - zsh
+        - git
+        - lv
+        - curl
+        - ruby
+    - name: Use VIM as the default editor
+      command: update-alternatives --set editor /usr/bin/vim.basic
+    - name: Use e-mail for apt-listchanges
+      copy:
+        src: etc/apt/listchanges.conf
+        dest: /etc/apt/listchanges.conf
+    - name: Install Groonga APT repository
+      apt_repository:
+        repo: "deb http://packages.groonga.org/debian/ jessie main"
+    - name: Install GPG key for Groonga APT repository
+      apt:
+        name: groonga-keyring
+        force: yes
+      register: groonga_keyring
+    - name: Force to update APT cache
+      apt:
+        update_cache: yes
+      when: groonga_keyring.changed
+    - name: Install Bundler
+      gem:
+        name: bundler
+        user_install: no
+
+    # rurema search
+    - name: Create user for rurema search
+      user:
+        name: "{{ rurema_search_user }}"
+    - name: Put ~{{ rurema_search_user }}/.forward
+      copy:
+        content: root
+        dest: ~{{ rurema_search_user }}/.forward
+        owner: "{{ rurema_search_user }}"
+        group: "{{ rurema_search_user }}"
+    - name: Clone rurema search
+      become_user: "{{ rurema_search_user }}"
+      git:
+        repo: https://github.com/clear-code/rurema-search.git
+        dest: ~{{ rurema_search_user }}/rurema-search
+      notify:
+        - Restart rurema search
+    - name: Put rurema search configurations
+      copy:
+        src: home/rurema/rurema-search/smtp.yaml
+        dest: ~{{ rurema_search_user }}/rurema-search/smtp.yaml
+        owner: "{{ rurema_search_user }}"
+        group: "{{ rurema_search_user }}"
+    - name: Set cron - MAILTO
+      cronvar:
+        user: "{{ rurema_search_user }}"
+        name: MAILTO
+        value: "{{ rurema_search_user }}"
+    - name: Set cron - PATH
+      cronvar:
+        user: "{{ rurema_search_user }}"
+        name: PATH
+        value: /usr/local/bin:/usr/bin:/bin
+    - name: Set cron - update.sh
+      cron:
+        user: "{{ rurema_search_user }}"
+        special_time: daily
+        name: "Update rurema and its index"
+        job: "cd /home/{{ rurema_search_user }}/rurema-search && bundle exec ./update.sh"
+    - name: Install packages for rurema-search
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - make
+        - gcc
+        - ruby-dev
+        - libgroonga-dev
+        - groonga-tokenizer-mecab
+        - groonga-plugin-suggest
+    - name: Update gems
+      become_user: "{{ rurema_search_user }}"
+      shell: bundle install --path vendor/bundler --without development:test
+      args:
+        chdir: ~{{ rurema_search_user }}/rurema-search/
+
+    # Apache
+    - name: Install Apache and related packages
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - apache2
+        - apache2-dev
+        - libapr1-dev
+        - libaprutil1-dev
+        - libcurl4-openssl-dev
+        - libssl-dev
+    # TODO: Remove me when we you Ruby 2.2 or later. Rack 2.0.0 or
+    # later requires Ruby 2.2 or later.
+    - name: Install Rack
+      gem:
+        name: rack
+        version: 1.6.4
+        user_install: no
+    - name: Install Passenger
+      gem:
+        name: passenger
+        version: "{{ passenger_version }}"
+        user_install: no
+      register: passenger
+    - name: Build Passenger
+      command: passenger-install-apache2-module --languages ruby --auto
+      when: passenger.changed
+    - name: Put Passenger configuration files
+      template:
+        src: etc/apache2/mods-available/{{ item }}.j2
+        dest: /etc/apache2/mods-available/{{ item }}
+      with_items:
+        - passenger.conf
+        - passenger.load
+      register: passenger_config_files
+    - name: Enable Passenger
+      command: a2enmod passenger
+      when: passenger_config_files.changed
+    - name: Put Apache configuration file
+      template:
+        src: etc/apache2/sites-available/{{ item }}.j2
+        dest: /etc/apache2/sites-available/{{ item }}
+      with_items:
+        - rurema.clear-code.com.conf
+      register: apache_config_files
+    - name: Disable default Apache configurations
+      command: a2dissite {{ item }}
+      with_items:
+        - 000-default
+        - default-ssl
+      notify:
+        - Restart Apache
+      when: apache_config_files.changed
+    - name: Enable our Apache configurations
+      command: a2ensite {{ item }}
+      with_items:
+        - rurema.clear-code.com
+      notify:
+        - Restart Apache
+      when: apache_config_files.changed
+
+    # Exim
+    - name: Set /etc/aliases
+      copy:
+        src: etc/aliases
+        dest: /etc/aliases
+    - name: Set /etc/mailname
+      copy:
+        content: rurema.clear-code.com
+        dest: /etc/mailname
+    - name: Put Exim configuration
+      copy:
+        src: etc/exim4/update-exim4.conf.conf
+        dest: /etc/exim4/update-exim4.conf.conf
+      register: exim_config_file
+    - name: Update Exim configuration
+      command: update-exim4.conf
+      notify:
+        - Restart Exim
+      when: exim_config_file.changed
+
+    # Munin
+    - name: Install munin-node
+      apt:
+        name: "{{ item }}"
+      with_items:
+        - munin-node
+    - name: Put munin-node configuration
+      copy:
+        src: etc/munin/munin-node.conf
+        dest: /etc/munin/munin-node.conf
+      notify:
+        - Restart munin-node
+
+  handlers:
+    - name: Restart rurema search
+      file:
+        path: /home/{{ rurema_search_user }}/rurema-search/tmp/restart.txt
+        state: touch
+        owner: "{{ rurema_search_user }}"
+        group: "{{ rurema_search_user }}"
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
+    - name: Restart Exim
+      service:
+        name: exim4
+        state: restarted
+    - name: Restart munin-node
+      service:
+        name: munin-node
+        state: restarted

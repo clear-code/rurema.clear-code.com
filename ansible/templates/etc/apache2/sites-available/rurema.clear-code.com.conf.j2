@@ -1,0 +1,24 @@
+<VirtualHost *:80>
+        ServerName rurema.clear-code.com
+        ServerAdmin webmaster@clear-code.com
+
+        DocumentRoot /home/{{ rurema_search_user }}/rurema-search/public
+        <Directory /home/{{ rurema_search_user }}/rurema-search/public>
+                Require all granted
+                #Require all denied
+                Options -MultiViews
+        </Directory>
+
+        ErrorLog ${APACHE_LOG_DIR}/rurema_error.log
+
+        # Possible values include: debug, info, notice, warn, error, crit,
+        # alert, emerg.
+        LogLevel warn
+
+        CustomLog ${APACHE_LOG_DIR}/rurema_access.log combined
+
+        PassengerMaxInstancesPerApp 2
+        # PassengerMaxRequests 100
+
+        AllowEncodedSlashes On
+</VirtualHost>

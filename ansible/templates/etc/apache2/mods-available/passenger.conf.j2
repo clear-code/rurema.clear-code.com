@@ -1,0 +1,7 @@
+<IfModule mod_passenger.c>
+  PassengerRoot /var/lib/gems/{{ ruby_api_version }}/gems/passenger-{{ passenger_version }}
+  PassengerDefaultRuby /usr/bin/ruby
+
+  PassengerBufferResponse on
+  PassengerMinInstances 1
+</IfModule>
