@@ -91,6 +91,7 @@
         - make
         - gcc
         - ruby-dev
+        - groonga-bin
         - libgroonga-dev
         - groonga-tokenizer-mecab
         - groonga-plugin-suggest
