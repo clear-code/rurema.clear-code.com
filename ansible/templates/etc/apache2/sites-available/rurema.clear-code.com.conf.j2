@@ -1,4 +1,10 @@
 <VirtualHost *:80>
+        ServerName no-rurema.clear-code.com
+        Redirect permanent / http://rurema.clear-code.com/
+        CustomLog ${APACHE_LOG_DIR}/no-rurema_access.log vhost_combined
+</VirtualHost>
+
+<VirtualHost *:80>
         ServerName rurema.clear-code.com
         ServerAdmin webmaster@clear-code.com
 
