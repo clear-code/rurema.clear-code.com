@@ -2,8 +2,8 @@
   become: yes
   vars:
     rurema_search_user: rurema
-    ruby_api_version: 2.3.0
-    passenger_version: 5.1.12
+    ruby_api_version: 2.5.0
+    passenger_version: 6.0.2
   tasks:
     # Base
     - name: Upgrade packages
@@ -25,25 +25,29 @@
     - name: Use VIM as the default editor
       command: update-alternatives --set editor /usr/bin/vim.basic
     - name: Use e-mail for apt-listchanges
-      copy:
-        src: etc/apt/listchanges.conf
-        dest: /etc/apt/listchanges.conf
+      lineinfile:
+        path: /etc/apt/listchanges.conf
+        regexp: "^frontend="
+        line: "frontend=mail"
+    - name: Download keyring for Groonga APT repository
+      get_url:
+        url: https://packages.groonga.org/debian/groonga-archive-keyring.gpg
+        dest: /usr/share/keyrings/groonga-archive-keyring.gpg
     - name: Install Groonga APT repository
       apt_repository:
-        repo: "deb http://packages.groonga.org/debian/ jessie main"
-    - name: Install GPG key for Groonga APT repository
-      apt:
-        name: groonga-keyring
-        force: yes
-      register: groonga_keyring
-    - name: Force to update APT cache
-      apt:
-        update_cache: yes
-      when: groonga_keyring.changed
+        repo: "deb [signed-by=/usr/share/keyrings/groonga-archive-keyring.gpg] https://packages.groonga.org/debian/ buster main"
     - name: Install Bundler
       gem:
         name: bundler
         user_install: no
+
+    # Set hostname
+    - name: Set hostname
+      copy:
+        content: "{{ inventory_hostname }}"
+        dest: /etc/hostname
+      notify:
+        - Apply hostname
 
     # rurema search
     - name: Create user for rurema search
@@ -112,13 +116,6 @@
         - libaprutil1-dev
         - libcurl4-openssl-dev
         - libssl-dev
-    # TODO: Remove me when we you Ruby 2.2 or later. Rack 2.0.0 or
-    # later requires Ruby 2.2 or later.
-    - name: Install Rack
-      gem:
-        name: rack
-        version: 1.6.4
-        user_install: no
     - name: Install Passenger
       gem:
         name: passenger
@@ -169,7 +166,7 @@
         dest: /etc/aliases
     - name: Set /etc/mailname
       copy:
-        content: rurema.clear-code.com
+        content: "{{ inventory_hostname }}"
         dest: /etc/mailname
     - name: Put Exim configuration
       copy:
@@ -196,6 +193,8 @@
         - Restart munin-node
 
   handlers:
+    - name: Apply hostname
+      command: hostname --file /etc/hostname
     - name: Restart rurema search
       file:
         path: /home/{{ rurema_search_user }}/rurema-search/tmp/restart.txt
