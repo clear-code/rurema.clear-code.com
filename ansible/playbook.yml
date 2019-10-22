@@ -13,15 +13,14 @@
         upgrade: safe
     - name: Install base packages
       apt:
-        name: "{{ item }}"
-      with_items:
-        - apt-listchanges
-        - vim
-        - zsh
-        - git
-        - lv
-        - curl
-        - ruby
+        name:
+          - apt-listchanges
+          - curl
+          - git
+          - lv
+          - ruby
+          - vim
+          - zsh
     - name: Use VIM as the default editor
       command: update-alternatives --set editor /usr/bin/vim.basic
     - name: Use e-mail for apt-listchanges
@@ -53,7 +52,8 @@
     - name: Install certbot
       tags: tls
       apt:
-        name: certbot
+        name:
+          - certbot
     - name: "Check Let's Encrypt certificate"
       tags: tls
       stat:
@@ -126,15 +126,14 @@
         job: "cd /home/{{ rurema_search_user }}/rurema-search && bundle exec ./update.sh"
     - name: Install packages for rurema-search
       apt:
-        name: "{{ item }}"
-      with_items:
-        - make
-        - gcc
-        - ruby-dev
-        - groonga-bin
-        - libgroonga-dev
-        - groonga-tokenizer-mecab
-        - groonga-plugin-suggest
+        name:
+          - gcc
+          - groonga-bin
+          - groonga-plugin-suggest
+          - groonga-tokenizer-mecab
+          - libgroonga-dev
+          - make
+          - ruby-dev
     - name: Update gems
       become_user: "{{ rurema_search_user }}"
       shell: bundle install --path vendor/bundler --without development:test
@@ -144,14 +143,13 @@
     # Apache
     - name: Install Apache and related packages
       apt:
-        name: "{{ item }}"
-      with_items:
-        - apache2
-        - apache2-dev
-        - libapr1-dev
-        - libaprutil1-dev
-        - libcurl4-openssl-dev
-        - libssl-dev
+        name:
+          - apache2
+          - apache2-dev
+          - libapr1-dev
+          - libaprutil1-dev
+          - libcurl4-openssl-dev
+          - libssl-dev
     - name: Install Passenger
       gem:
         name: passenger
@@ -221,9 +219,8 @@
     # Munin
     - name: Install munin-node
       apt:
-        name: "{{ item }}"
-      with_items:
-        - munin-node
+        name:
+          - munin-node
     - name: Put munin-node configuration
       copy:
         src: etc/munin/munin-node.conf
