@@ -2,8 +2,8 @@
   become: yes
   vars:
     rurema_search_user: rurema
-    ruby_api_version: 2.7.0
-    passenger_version: 6.0.15
+    ruby_api_version: 3.1.0
+    passenger_version: 6.0.20
   tasks:
     # Base
     - name: Upgrade packages
@@ -44,13 +44,9 @@
         src: etc/sudoers.d/sudo-nopasswd
         dest: /etc/sudoers.d/sudo-nopasswd
         mode: 0400
-    - name: Download keyring for Groonga APT repository
-      get_url:
-        url: https://packages.groonga.org/debian/groonga-archive-keyring.gpg
-        dest: /usr/share/keyrings/groonga-archive-keyring.gpg
     - name: Install Groonga APT repository
       apt:
-        deb: https://packages.groonga.org/debian/groonga-apt-source-latest-bullseye.deb
+        deb: https://packages.groonga.org/debian/groonga-apt-source-latest-bookworm.deb
     - name: Install Bundler
       gem:
         name: bundler
