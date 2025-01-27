@@ -230,6 +230,12 @@
       notify:
         - Restart Exim
       when: exim_config_file.changed
+    - name: Rotate Exim4 paniclog weekly
+      lineinfile:
+        path: /etc/logrotate.d/exim4-paniclog
+        regexp: "^(\\s+)(size |weekly)"
+        line: "\\1weekly"
+        backrefs: yes
 
     # Munin
     - name: Install munin-node
