@@ -2,8 +2,8 @@
   become: yes
   vars:
     rurema_search_user: rurema
-    ruby_api_version: 3.1.0
-    passenger_version: 6.0.20
+    ruby_api_version: 3.3.0
+    passenger_version: 6.1.1
   tasks:
     # Base
     - name: Upgrade packages
@@ -46,7 +46,7 @@
         mode: 0400
     - name: Install Groonga APT repository
       apt:
-        deb: https://packages.groonga.org/debian/groonga-apt-source-latest-bookworm.deb
+        deb: https://packages.groonga.org/debian/groonga-apt-source-latest-trixie.deb
     - name: Install Bundler
       gem:
         name: bundler
