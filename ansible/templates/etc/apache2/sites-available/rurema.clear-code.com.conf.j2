@@ -17,15 +17,25 @@
 		ServerName rurema.clear-code.com
 		ServerAdmin webmaster@clear-code.com
 
-		DocumentRoot /home/{{ rurema_search_user }}/rurema-search/public
-		<Directory /home/{{ rurema_search_user }}/rurema-search/public>
-			Require all granted
-			Options -MultiViews
-		</Directory>
-
-		# PassengerMaxRequests 100
-
 		AllowEncodedSlashes On
+
+		# These headers need to be set or else Anubis will
+		# throw an "admin misconfiguration" error.
+		RequestHeader set "X-Real-Ip" expr=%{REMOTE_ADDR}
+		RequestHeader set X-Forwarded-Proto "https"
+		RequestHeader set "X-Http-Version" "%{SERVER_PROTOCOL}s"
+
+		ProxyPreserveHost On
+
+		ProxyRequests Off
+		ProxyVia Off
+
+		ProxyPass /server-status !
+		ProxyPassReverse /server-status !
+		# The "http://127.0.0.1:8923/" parts are meanigless.
+                # I think that they are not used.
+		ProxyPass / unix:/run/anubis/rurema/sock|http://127.0.0.1:8923/
+		ProxyPassReverse / unix:/run/anubis/rurema/sock|http://127.0.0.1:8923/
 
 		# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
 		# error, crit, alert, emerg.
@@ -153,7 +163,33 @@
 		# BrowserMatch "MSIE [2-6]" \
 		#		nokeepalive ssl-unclean-shutdown \
 		#		downgrade-1.0 force-response-1.0
+	</VirtualHost>
 
+        Listen 127.0.0.1:3000
+        <VirtualHost 127.0.0.1:3000>
+		ServerName rurema.clear-code.com
+		ServerAdmin webmaster@clear-code.com
+
+		RemoteIPHeader X-Real-IP
+		RemoteIPTrustedProxy 127.0.0.1/32
+
+		DocumentRoot /home/rurema/rurema-search/public
+		<Directory /home/rurema/rurema-search/public>
+			Require all granted
+			Options -MultiViews
+		</Directory>
+
+		AllowEncodedSlashes On
+
+		# Available loglevels: trace8, ..., trace1, debug, info, notice, warn,
+		# error, crit, alert, emerg.
+		# It is also possible to configure the loglevel for particular
+		# modules, e.g.
+		#LogLevel info ssl:warn
+		LogLevel warn
+
+		ErrorLog ${APACHE_LOG_DIR}/rurema_localhost_error.log
+		CustomLog ${APACHE_LOG_DIR}/rurema_localhost_access.log combined
 	</VirtualHost>
 </IfModule>
 
