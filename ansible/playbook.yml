@@ -191,7 +191,7 @@
       when: passenger.changed
     - name: Put Passenger configuration files
       template:
-        src: etc/apache2/mods-available/{{ item }}.j2
+        src: etc/apache2/mods-available/{{ item }}.jinja
         dest: /etc/apache2/mods-available/{{ item }}
       with_items:
         - passenger.conf
@@ -208,7 +208,7 @@
         - Restart Apache
     - name: Put Apache configuration file
       template:
-        src: etc/apache2/sites-available/{{ item }}.j2
+        src: etc/apache2/sites-available/{{ item }}.jinja
         dest: /etc/apache2/sites-available/{{ item }}
       with_items:
         - rurema.clear-code.com.conf
