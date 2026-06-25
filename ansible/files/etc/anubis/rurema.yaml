@@ -5,7 +5,7 @@ bots:
     action: DENY
     expression:
       any:
-        - userAgent.matches("Chrome/1[1-2]")
+        - userAgent.matches("Chrome/1[0-2]")
         - userAgent.matches("Firefox/12")
         - userAgent.matches("Safari/5")
     weight:
