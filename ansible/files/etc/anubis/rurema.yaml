@@ -1,6 +1,6 @@
 bots:
   - import: (data)/meta/default-config.yaml
-  - name: clawlers-old-browser-mimic
+  - name: crawlers-old-browser-mimic
     #action: WEIGH
     action: DENY
     expression:
