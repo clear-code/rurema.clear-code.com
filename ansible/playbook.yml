@@ -162,6 +162,8 @@
       with_items:
         - rurema.env
         - rurema.yaml
+      notify:
+        - Restart Anubis
     - name: Enable Anubis
       systemd_service:
         name: anubis@rurema
@@ -274,6 +276,10 @@
         state: touch
         owner: "{{ rurema_search_user }}"
         group: "{{ rurema_search_user }}"
+    - name: Restart Anubis
+      service:
+        name: anubis@rurema
+        state: restarted
     - name: Restart Apache
       service:
         name: apache2
