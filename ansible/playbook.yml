@@ -162,8 +162,11 @@
         deb: "https://github.com/TecharoHQ/anubis/releases/download/v{{ anubis_version }}/anubis_{{ anubis_version }}_amd64.deb"
     - name: Put Anubis configuration
       copy:
-        src: etc/anubis/rurema.env
-        dest: /etc/anubis/rurema.env
+        src: etc/anubis/{{ item }}
+        dest: /etc/anubis/{{ item }}
+      with_items:
+        - rurema.env
+        - rurema.yaml
     - name: Enable Anubis
       systemd_service:
         name: anubis@rurema

@@ -1,0 +1,16 @@
+bots:
+  - import: (data)/meta/default-config.yaml
+  - name: clawlers-old-browser-mimic
+    #action: WEIGH
+    action: DENY
+    expression:
+      any:
+        - userAgent.matches("Chrome/1[1-2]")
+        - userAgent.matches("Firefox/12")
+    weight:
+      adjust: 100
+status_codes:
+  DENY: 403
+metrics:
+  bind: "127.0.0.1:9000"
+  network: tcp
