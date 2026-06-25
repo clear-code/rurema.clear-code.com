@@ -7,6 +7,7 @@ bots:
       any:
         - userAgent.matches("Chrome/1[1-2]")
         - userAgent.matches("Firefox/12")
+        - userAgent.matches("Safari/5")
     weight:
       adjust: 100
 status_codes:
